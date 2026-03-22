@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trinetra.net — AI Legal Intelligence for Everyone</title>
+  <meta name="description" content="Free browser extension that reads Terms & Conditions for you. Powered by AI. Protects your rights under Indian law."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#060711;--s1:#09091a;--s2:#0d0e22;--b1:#16182e;--b2:#1f2140;
+      --p:#6b5fff;--p2:#9d8bff;--pglow:rgba(107,95,255,0.3);
+      --g:#00e09a;--r:#ff3b5c;--a:#ffb340;--c:#00ccff;
+      --t1:#eef0ff;--t2:#8b8eb0;--t3:#3e4068;
+      --ff:'Space Grotesk',sans-serif;--fi:'Instrument Serif',serif;--fm:'JetBrains Mono',monospace;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--t1);font-family:var(--ff);overflow-x:hidden;line-height:1.6}
+    body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity:.5}
+
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 48px;
+      display:flex;align-items:center;justify-content:space-between;
+      background:rgba(6,7,17,0.88);backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(107,95,255,0.12);transition:padding 0.3s}
+    .nav-logo{display:flex;align-items:center;gap:11px;text-decoration:none}
+    .nav-eye{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--p),#9b5de5);
+      display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 20px var(--pglow)}
+    .nav-name{font-size:17px;font-weight:700;color:var(--t1);letter-spacing:-0.02em}
+    .nav-name span{color:var(--p2)}
+    .nav-links{display:flex;align-items:center;gap:32px;list-style:none}
+    .nav-links a{color:var(--t2);text-decoration:none;font-size:14px;font-weight:500;transition:color 0.2s}
+    .nav-links a:hover{color:var(--t1)}
+    .nav-cta{background:linear-gradient(135deg,var(--p),#8060ff)!important;color:#fff!important;
+      padding:10px 22px;border-radius:9px;font-weight:700!important;font-size:13px!important;
+      box-shadow:0 4px 20px var(--pglow);transition:transform 0.2s,box-shadow 0.2s!important}
+    .nav-cta:hover{transform:translateY(-1px)!important;box-shadow:0 6px 28px var(--pglow)!important}
+
+    /* HERO */
+    .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;
+      padding:120px 48px 80px;position:relative;overflow:hidden;text-align:center}
+    .hero::before{content:'';position:absolute;top:10%;left:50%;transform:translateX(-50%);
+      width:700px;height:500px;
+      background:radial-gradient(ellipse at center,rgba(107,95,255,0.14) 0%,rgba(0,204,255,0.06) 40%,transparent 70%);
+      pointer-events:none}
+    .hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:200px;
+      background:linear-gradient(0deg,var(--bg) 0%,transparent 100%);pointer-events:none;z-index:1}
+    .hero-content{position:relative;z-index:2;max-width:820px}
+
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;
+      background:rgba(107,95,255,0.1);border:1px solid rgba(107,95,255,0.3);
+      border-radius:20px;padding:6px 16px;margin-bottom:28px;
+      font-size:12px;font-family:var(--fm);color:var(--p2);letter-spacing:0.08em;text-transform:uppercase}
+    .bdot{width:6px;height:6px;border-radius:50%;background:var(--g);animation:bdot 2s ease-in-out infinite}
+    @keyframes bdot{0%,100%{opacity:1}50%{opacity:.3}}
+
+    .hero-h1{font-family:var(--fi);font-size:clamp(42px,7vw,78px);font-weight:400;
+      line-height:1.08;letter-spacing:-0.02em;margin-bottom:24px;color:var(--t1)}
+    .hero-h1 em{font-style:italic;background:linear-gradient(135deg,var(--p2) 0%,var(--c) 100%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero-sub{font-size:18px;color:var(--t2);line-height:1.7;max-width:580px;margin:0 auto 40px}
+    .hero-sub strong{color:var(--t1);font-weight:600}
+
+    .hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:50px}
+    .btn-install{display:inline-flex;align-items:center;gap:10px;
+      background:linear-gradient(135deg,var(--p),#8060ff);color:#fff;text-decoration:none;
+      padding:16px 32px;border-radius:12px;font-size:16px;font-weight:700;
+      box-shadow:0 6px 32px var(--pglow);transition:transform 0.2s,box-shadow 0.2s}
+    .btn-install:hover{transform:translateY(-2px);box-shadow:0 10px 44px var(--pglow)}
+    .btn-demo{display:inline-flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,0.05);color:var(--t2);border:1px solid var(--b2);
+      text-decoration:none;padding:16px 28px;border-radius:12px;font-size:15px;transition:all 0.2s}
+    .btn-demo:hover{background:rgba(255,255,255,0.08);color:var(--t1)}
+
+    .hero-pills{display:flex;align-items:center;gap:18px;justify-content:center;flex-wrap:wrap;
+      font-size:12px;color:var(--t3);font-family:var(--fm)}
+    .hero-pills span{color:var(--t2)}
+
+    /* PREVIEW WINDOW */
+    .hero-preview{position:relative;z-index:2;margin-top:60px;display:flex;justify-content:center}
+    .pw{width:330px;background:#09091a;border:1px solid rgba(107,95,255,0.25);border-radius:18px;
+      box-shadow:0 40px 120px rgba(0,0,0,0.7);overflow:hidden;animation:float 6s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+    .pw-hdr{padding:13px 16px 11px;background:linear-gradient(180deg,rgba(107,95,255,0.12) 0%,transparent 100%);
+      border-bottom:1px solid rgba(107,95,255,0.12);display:flex;align-items:center;gap:10px;position:relative}
+    .pw-hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,transparent,var(--p) 40%,var(--c) 70%,transparent);opacity:.7}
+    .pw-logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--p),#9b5de5);
+      display:flex;align-items:center;justify-content:center;font-size:16px}
+    .pw-title{font-size:13px;font-weight:700;color:var(--t1)}
+    .pw-sub{font-size:9px;color:var(--t3);font-family:var(--fm)}
+    .pw-dot{width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);margin-left:auto;animation:bdot 2s ease-in-out infinite}
+    .pw-score{padding:12px 16px 10px;border-bottom:1px solid #0f1020}
+    .pw-sr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+    .pw-sl{font-size:10px;color:var(--t3)}
+    .pw-sv{font-size:14px;font-weight:800;font-family:var(--fm);color:var(--r)}
+    .pw-track{height:5px;background:var(--b1);border-radius:3px;overflow:hidden;margin-bottom:10px}
+    .pw-fill{height:100%;width:72%;background:linear-gradient(90deg,var(--g),var(--a),var(--r));border-radius:3px}
+    .pw-stats{display:flex;gap:7px}
+    .pw-stat{flex:1;background:#0a0b18;border:1px solid #181a30;border-radius:8px;padding:7px 8px;text-align:center}
+    .pw-stat .n{font-size:18px;font-weight:800;font-family:var(--fm);line-height:1}
+    .pw-stat .l{font-size:8px;color:var(--t3);margin-top:2px;text-transform:uppercase;letter-spacing:.06em}
+    .pw-stat.t .n{color:var(--p2)} .pw-stat.r .n{color:var(--r)} .pw-stat.s .n{color:var(--g)}
+    .pw-clauses{padding:10px 12px 14px}
+    .pw-card{border-radius:10px;margin-bottom:7px;padding:11px 12px;border:1px solid;border-left-width:3px}
+    .pw-card.red{background:#130810;border-color:rgba(255,59,92,.25);border-left-color:var(--r)}
+    .pw-card.amb{background:#130e05;border-color:rgba(255,179,71,.2);border-left-color:var(--a)}
+    .pw-card.grn{background:#031310;border-color:rgba(0,224,154,.2);border-left-color:var(--g)}
+    .pw-ct{font-size:8px;font-family:var(--fm);font-weight:700;text-transform:uppercase;margin-bottom:4px}
+    .pw-card.red .pw-ct{color:var(--r)} .pw-card.amb .pw-ct{color:var(--a)} .pw-card.grn .pw-ct{color:var(--g)}
+    .pw-cx{font-size:10.5px;color:var(--t2);line-height:1.55}
+    .pw-bar{height:2px;background:rgba(255,255,255,.06);border-radius:1px;overflow:hidden;margin-top:7px}
+    .pw-card.red .pw-bf{height:100%;background:var(--r);border-radius:1px}
+    .pw-card.amb .pw-bf{height:100%;background:var(--a);border-radius:1px}
+    .pw-card.grn .pw-bf{height:100%;background:var(--g);border-radius:1px}
+
+    /* LOGOS */
+    .logos-strip{padding:36px 48px;border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);text-align:center}
+    .logos-lbl{font-size:11px;font-family:var(--fm);color:var(--t3);text-transform:uppercase;letter-spacing:.14em;margin-bottom:22px}
+    .logos-row{display:flex;align-items:center;justify-content:center;gap:36px;flex-wrap:wrap}
+    .logos-row span{font-size:15px;font-weight:700;color:var(--t3);opacity:.5;transition:opacity .2s}
+    .logos-row span:hover{opacity:.8}
+
+    /* SECTIONS */
+    .sec{padding:100px 48px;position:relative}
+    .sec-inner{max-width:1100px;margin:0 auto}
+    .sec-tag{font-family:var(--fm);font-size:11px;color:var(--p2);text-transform:uppercase;
+      letter-spacing:.14em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+    .sec-tag::before{content:'';width:20px;height:1px;background:var(--p)}
+    .sec-h2{font-family:var(--fi);font-size:clamp(32px,5vw,52px);font-weight:400;
+      line-height:1.12;letter-spacing:-0.02em;margin-bottom:16px}
+    .sec-h2 em{font-style:italic;color:var(--p2)}
+    .sec-sub{font-size:17px;color:var(--t2);max-width:520px;line-height:1.65}
+
+    /* STEPS */
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:56px}
+    .step{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:28px;
+      position:relative;overflow:hidden;transition:border-color .3s,transform .2s}
+    .step:hover{border-color:rgba(107,95,255,.35);transform:translateY(-4px)}
+    .step::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,transparent,var(--p),transparent);opacity:0;transition:opacity .3s}
+    .step:hover::before{opacity:1}
+    .step-n{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
+      background:rgba(107,95,255,.15);border:1px solid rgba(107,95,255,.3);border-radius:8px;
+      font-family:var(--fm);font-size:13px;color:var(--p2);margin-bottom:16px}
+    .step-ico{font-size:30px;margin-bottom:14px;display:block}
+    .step-h3{font-size:19px;font-weight:700;margin-bottom:10px;letter-spacing:-0.01em}
+    .step-p{font-size:14px;color:var(--t2);line-height:1.65}
+
+    /* FEATURES */
+    .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:50px}
+    .fc{background:var(--s1);border:1px solid var(--b1);border-radius:16px;padding:28px;
+      transition:border-color .2s,transform .2s}
+    .fc:hover{border-color:var(--b2);transform:translateY(-3px)}
+    .fc.span2{grid-column:span 2}
+    .fc-ico{font-size:28px;margin-bottom:14px;display:block}
+    .fc-h3{font-size:18px;font-weight:700;margin-bottom:9px;letter-spacing:-0.01em}
+    .fc-p{font-size:14px;color:var(--t2);line-height:1.65}
+    .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+    .tag{font-family:var(--fm);font-size:10px;padding:3px 10px;border-radius:20px;border:1px solid}
+    .tag.g{color:var(--g);border-color:rgba(0,224,154,.3);background:rgba(0,224,154,.07)}
+    .tag.p{color:var(--p2);border-color:rgba(157,139,255,.3);background:rgba(157,139,255,.07)}
+    .tag.r{color:var(--r);border-color:rgba(255,59,92,.3);background:rgba(255,59,92,.07)}
+    .tag.a{color:var(--a);border-color:rgba(255,179,71,.3);background:rgba(255,179,71,.07)}
+
+    /* LAWS */
+    .laws-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+    .law-card{background:var(--bg);border:1px solid var(--b1);border-radius:14px;padding:22px;transition:border-color .2s}
+    .law-card:hover{border-color:var(--b2)}
+    .law-badge{display:inline-block;font-family:var(--fm);font-size:9px;font-weight:700;
+      padding:3px 9px;border-radius:20px;border:1px solid;margin-bottom:12px;
+      text-transform:uppercase;letter-spacing:.08em}
+    .law-badge.in{color:var(--a);border-color:rgba(255,179,71,.3);background:rgba(255,179,71,.08)}
+    .law-badge.eu{color:var(--c);border-color:rgba(0,204,255,.3);background:rgba(0,204,255,.08)}
+    .law-badge.rbi{color:var(--g);border-color:rgba(0,224,154,.3);background:rgba(0,224,154,.08)}
+    .law-name{font-size:15px;font-weight:700;margin-bottom:6px;letter-spacing:-0.01em}
+    .law-desc{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:10px}
+    .law-right{padding:10px 12px;background:rgba(107,95,255,.06);border:1px solid rgba(107,95,255,.15);
+      border-radius:8px;font-size:12px;color:var(--t2);line-height:1.55}
+    .law-right strong{color:var(--t1)}
+
+    /* INSTALL */
+    .inst-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:48px}
+    .inst-step{text-align:center;padding:24px 14px;background:var(--s1);border:1px solid var(--b1);
+      border-radius:14px;position:relative}
+    .inst-step::after{content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);
+      color:var(--t3);font-size:16px}
+    .inst-step:last-child::after{display:none}
+    .inst-num{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--p),#8060ff);
+      display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:15px;
+      font-weight:700;color:#fff;margin:0 auto 12px;box-shadow:0 4px 16px var(--pglow)}
+    .inst-ico{font-size:22px;margin-bottom:8px;display:block}
+    .inst-h4{font-size:13px;font-weight:700;margin-bottom:6px}
+    .inst-p{font-size:12px;color:var(--t2);line-height:1.55}
+
+    /* FAQ */
+    .faq-list{margin-top:48px;max-width:720px}
+    .faq-item{border-bottom:1px solid var(--b1);overflow:hidden}
+    .faq-q{width:100%;background:none;border:none;color:var(--t1);font-family:var(--ff);
+      font-size:16px;font-weight:600;padding:22px 0;text-align:left;cursor:pointer;
+      display:flex;justify-content:space-between;align-items:center;gap:16px;transition:color .2s}
+    .faq-q:hover{color:var(--p2)}
+    .faq-arr{font-size:18px;color:var(--p);flex-shrink:0;transition:transform .25s}
+    .faq-item.open .faq-arr{transform:rotate(45deg)}
+    .faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease,padding .25s;
+      font-size:14.5px;color:var(--t2);line-height:1.7}
+    .faq-item.open .faq-a{max-height:220px;padding-bottom:20px}
+
+    /* CTA */
+    .cta-sec{padding:100px 48px;text-align:center;position:relative;overflow:hidden}
+    .cta-sec::before{content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at 50% 0%,rgba(107,95,255,.18) 0%,transparent 65%);
+      pointer-events:none}
+    .cta-h2{font-family:var(--fi);font-size:clamp(36px,5vw,60px);font-weight:400;
+      line-height:1.1;letter-spacing:-0.02em;margin-bottom:18px}
+    .cta-h2 em{font-style:italic;color:var(--p2)}
+    .cta-sub{font-size:17px;color:var(--t2);max-width:480px;margin:0 auto 40px;line-height:1.65}
+    .cta-note{font-size:12px;color:var(--t3);font-family:var(--fm);margin-top:20px}
+    .cta-note span{color:var(--g)}
+
+    /* FOOTER */
+    footer{padding:36px 48px;border-top:1px solid var(--b1);
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px}
+    .ft-left{display:flex;align-items:center;gap:12px}
+    .ft-name{font-size:15px;font-weight:700;color:var(--t1)}
+    .ft-tag{font-size:12px;color:var(--t3)}
+    .ft-links{display:flex;gap:26px;list-style:none}
+    .ft-links a{font-size:13px;color:var(--t3);text-decoration:none;transition:color .2s}
+    .ft-links a:hover{color:var(--t2)}
+    .ft-copy{font-size:12px;color:var(--t3);font-family:var(--fm)}
+
+    /* REVEAL */
+    .reveal{opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease}
+    .reveal.visible{opacity:1;transform:translateY(0)}
+
+    /* RESPONSIVE */
+    @media(max-width:900px){
+      nav{padding:14px 24px} .nav-links{display:none}
+      .hero{padding:100px 24px 60px} .sec{padding:70px 24px}
+      .steps,.laws-grid{grid-template-columns:1fr}
+      .feat-grid{grid-template-columns:1fr} .fc.span2{grid-column:span 1}
+      .inst-grid{grid-template-columns:1fr 1fr} .inst-step::after{display:none}
+      footer{flex-direction:column;padding:28px 24px}
+      .logos-strip{padding:28px 24px} .logos-row{gap:20px}
+    }
+    @media(max-width:580px){
+      .hero-actions{flex-direction:column;align-items:center}
+      .inst-grid{grid-template-columns:1fr} .pw{width:290px}
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <a class="nav-logo" href="#">
+    <div class="nav-eye">👁️</div>
+    <span class="nav-name">Trinetra<span>.net</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#laws">Laws covered</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#install" class="nav-cta">Install Free →</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-content">
+      <div class="hero-badge"><div class="bdot"></div>Free · Open Source · AI-Powered</div>
+      <h1 class="hero-h1">Stop agreeing to things<br/>you <em>don't understand</em></h1>
+      <p class="hero-sub">
+        Trinetra reads every Terms &amp; Conditions page for you — <strong>instantly.</strong>
+        It finds dangerous clauses, explains your rights in plain English, and stores
+        tamper-proof blockchain evidence of what the company promised.
+      </p>
+      <div class="hero-actions">
+        <a href="#install" class="btn-install"><span style="font-size:20px">🧩</span> Add to Chrome — Free</a>
+        <a href="#how" class="btn-demo">See how it works ↓</a>
+      </div>
+      <div class="hero-pills">
+        <span>🔒 <span>No account needed</span></span>
+        <span>⚡ <span>Auto-activates on T&amp;C pages</span></span>
+        <span>🇮🇳 <span>Built for Indian law</span></span>
+        <span>🌍 <span>GDPR aware</span></span>
+      </div>
+    </div>
+
+    <!-- Floating sidebar preview -->
+    <div class="hero-preview">
+      <div class="pw">
+        <div class="pw-hdr">
+          <div class="pw-logo">👁️</div>
+          <div><div class="pw-title">Trinetra.net</div><div class="pw-sub">LEGAL INTELLIGENCE ENGINE</div></div>
+          <div class="pw-dot"></div>
+        </div>
+        <div class="pw-score">
+          <div class="pw-sr"><span class="pw-sl">Overall Risk Score</span><span class="pw-sv">72/100 — HIGH</span></div>
+          <div class="pw-track"><div class="pw-fill"></div></div>
+          <div class="pw-stats">
+            <div class="pw-stat t"><div class="n">21</div><div class="l">Clauses</div></div>
+            <div class="pw-stat r"><div class="n">14</div><div class="l">Risky</div></div>
+            <div class="pw-stat s"><div class="n">7</div><div class="l">Safe</div></div>
+          </div>
+        </div>
+        <div class="pw-clauses">
+          <div class="pw-card red">
+            <div class="pw-ct">⚡ Termination Clause</div>
+            <div class="pw-cx">They can close your account without notice at any time.</div>
+            <div class="pw-bar"><div class="pw-bf" style="width:88%"></div></div>
+          </div>
+          <div class="pw-card amb">
+            <div class="pw-ct">💳 Auto-Renewal</div>
+            <div class="pw-cx">Your card is charged automatically unless you cancel.</div>
+            <div class="pw-bar"><div class="pw-bf" style="width:60%"></div></div>
+          </div>
+          <div class="pw-card grn">
+            <div class="pw-ct">✅ Refund Clause</div>
+            <div class="pw-cx">You may request a full refund within 7 days.</div>
+            <div class="pw-bar"><div class="pw-bf" style="width:16%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LOGOS -->
+<div class="logos-strip">
+  <div class="logos-lbl">Works on every website including</div>
+  <div class="logos-row">
+    <span>Flipkart</span><span>Amazon</span><span>Spotify</span><span>Google</span>
+    <span>Zomato</span><span>Netflix</span><span>Jio</span><span>Paytm</span>
+    <span>HDFC</span><span>Airtel</span><span>Swiggy</span>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="sec" id="how">
+  <div class="sec-inner">
+    <div class="sec-tag">How it works</div>
+    <h2 class="sec-h2">Three steps.<br/><em>Zero effort.</em></h2>
+    <p class="sec-sub">Trinetra runs silently in your browser. The moment you land on a T&amp;C page, it automatically starts reading it for you.</p>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-n">1</div>
+        <span class="step-ico">🔍</span>
+        <h3 class="step-h3">Auto-detects T&amp;C pages</h3>
+        <p class="step-p">The moment your browser opens any Terms, Privacy Policy, or Agreement page — Trinetra automatically activates. No clicking, no copying text. It reads the <strong>entire document</strong> including the fine print buried at the bottom.</p>
+      </div>
+      <div class="step reveal" style="transition-delay:.1s">
+        <div class="step-n">2</div>
+        <span class="step-ico">🤖</span>
+        <h3 class="step-h3">AI classifies every clause</h3>
+        <p class="step-p">A zero-shot AI model reads each clause and classifies it — termination, auto-renewal, data sharing, IP theft, arbitration, indemnification. Then cross-references it against RBI, DPDP Act 2023, CPA 2019, GDPR and more.</p>
+      </div>
+      <div class="step reveal" style="transition-delay:.2s">
+        <div class="step-n">3</div>
+        <span class="step-ico">⚖️</span>
+        <h3 class="step-h3">Plain English + your rights</h3>
+        <p class="step-p">Every dangerous clause gets a plain-English summary, a real-world example of how it has been misused, your exact legal rights under Indian law, and concrete steps you can take to protect yourself.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec" id="features" style="background:var(--s1)">
+  <div class="sec-inner">
+    <div class="sec-tag">Features</div>
+    <h2 class="sec-h2">Everything you need to<br/><em>read the fine print.</em></h2>
+    <p class="sec-sub">Built specifically for Indian users but globally applicable. Every feature gives ordinary people the same protection a lawyer would provide.</p>
+    <div class="feat-grid">
+      <div class="fc reveal">
+        <span class="fc-ico">🎯</span>
+        <h3 class="fc-h3">Per-Clause Individual Summary</h3>
+        <p class="fc-p">Every single clause gets its own 4-section breakdown: what it says, why it matters, your exact legal rights, and what to do. Not a generic summary — specific to the actual text of that clause.</p>
+        <div class="tags">
+          <span class="tag g">What it says</span><span class="tag r">Why it matters</span>
+          <span class="tag p">Your rights</span><span class="tag a">What to do</span>
+        </div>
+      </div>
+      <div class="fc reveal" style="transition-delay:.1s">
+        <span class="fc-ico">⚠️</span>
+        <h3 class="fc-h3">Hidden Risk Detection</h3>
+        <p class="fc-p">Companies deliberately bury the most dangerous clauses at the very bottom of their T&amp;C where no one reads. Trinetra scans the entire document and flags clauses hidden past the 70% mark.</p>
+        <div class="tags"><span class="tag r">Bottom section scan</span><span class="tag r">⚠️ HIDDEN badge</span></div>
+      </div>
+      <div class="fc reveal" style="transition-delay:.05s">
+        <span class="fc-ico">🔗</span>
+        <h3 class="fc-h3">Blockchain Evidence Storage</h3>
+        <p class="fc-p">Every analysis creates a SHA-256 tamper-proof hash stored as a local blockchain record. If the company silently changes their terms later, you have cryptographic proof of what it said when you agreed.</p>
+        <div class="tags"><span class="tag p">SHA-256</span><span class="tag p">Local storage</span><span class="tag g">Tamper-proof</span></div>
+      </div>
+      <div class="fc reveal" style="transition-delay:.15s">
+        <span class="fc-ico">🇮🇳</span>
+        <h3 class="fc-h3">Built for Indian Consumer Law</h3>
+        <p class="fc-p">Covers RBI e-Mandate 2021, DPDP Act 2023, CPA 2019, Copyright Act 1957, Arbitration Act 1996, and ICA 1872. Every violation cited with the exact section number and what it means for you.</p>
+        <div class="tags"><span class="tag a">CPA 2019</span><span class="tag a">DPDP 2023</span><span class="tag a">RBI</span><span class="tag a">ICA 1872</span></div>
+      </div>
+      <div class="fc span2 reveal">
+        <span class="fc-ico">🎨</span>
+        <h3 class="fc-h3">Colour-coded cards — dangerous vs safe at a glance</h3>
+        <p class="fc-p">
+          🔴 <strong style="color:var(--r)">Red</strong> — Dangerous clauses that harm your rights (termination, indemnification, arbitration, theft, privacy breach). &nbsp;
+          🟡 <strong style="color:var(--a)">Amber</strong> — Watch out clauses (auto-renewal, data collection). &nbsp;
+          🟢 <strong style="color:var(--g)">Green</strong> — Clauses that actually protect you (refund rights, consumer-friendly terms). No legal knowledge required.
+        </p>
+        <div class="tags">
+          <span class="tag r">🔴 Dangerous</span><span class="tag a">🟡 Watch out</span><span class="tag g">🟢 Safe for you</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LAWS -->
+<section class="sec" id="laws">
+  <div class="sec-inner">
+    <div class="sec-tag">Legal coverage</div>
+    <h2 class="sec-h2">Six laws.<br/><em>Your complete protection.</em></h2>
+    <p class="sec-sub">Every clause is cross-referenced against these regulations with exact section citations and plain-English explanations of your rights.</p>
+    <div class="laws-grid">
+      <div class="law-card reveal">
+        <span class="law-badge rbi">RBI — India</span>
+        <div class="law-name">RBI e-Mandate Circular 2021</div>
+        <div class="law-desc">Controls all recurring payments and auto-renewals in India.</div>
+        <div class="law-right"><strong>Your right:</strong> Companies must send a pre-debit notification 24h before any recurring charge. Dispute via your bank if violated.</div>
+      </div>
+      <div class="law-card reveal" style="transition-delay:.05s">
+        <span class="law-badge in">India</span>
+        <div class="law-name">DPDP Act 2023</div>
+        <div class="law-desc">India's Digital Personal Data Protection Act — most comprehensive data law yet.</div>
+        <div class="law-right"><strong>Your right:</strong> Explicit consent required for every data use. Request deletion within 72 hours under §12.</div>
+      </div>
+      <div class="law-card reveal" style="transition-delay:.1s">
+        <span class="law-badge in">India</span>
+        <div class="law-name">Consumer Protection Act 2019</div>
+        <div class="law-desc">Defines unfair contract terms and the right to approach consumer courts.</div>
+        <div class="law-right"><strong>Your right:</strong> §100 guarantees consumer court access regardless of any arbitration clause.</div>
+      </div>
+      <div class="law-card reveal" style="transition-delay:.05s">
+        <span class="law-badge eu">EU</span>
+        <div class="law-name">GDPR</div>
+        <div class="law-desc">Applies to any company serving users in the EU — fines up to €20M.</div>
+        <div class="law-right"><strong>Your right:</strong> Right to erasure, portability, and knowing exactly what data is held and why.</div>
+      </div>
+      <div class="law-card reveal" style="transition-delay:.1s">
+        <span class="law-badge in">India</span>
+        <div class="law-name">Copyright Act 1957</div>
+        <div class="law-desc">Protects your ownership of content you create and post online.</div>
+        <div class="law-right"><strong>Your right:</strong> §17 makes you the first owner. Platforms can only use your content under a license you specifically grant.</div>
+      </div>
+      <div class="law-card reveal" style="transition-delay:.15s">
+        <span class="law-badge in">India</span>
+        <div class="law-name">Indian Contract Act 1872</div>
+        <div class="law-desc">Governs when clauses in contracts can be declared void.</div>
+        <div class="law-right"><strong>Your right:</strong> §23 voids clauses that are unconscionable, against public policy, or obtained under undue influence.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section class="sec" id="install" style="background:var(--s1)">
+  <div class="sec-inner">
+    <div class="sec-tag">Installation</div>
+    <h2 class="sec-h2">Up and running<br/><em>in 60 seconds.</em></h2>
+    <p class="sec-sub">No account. No sign-up. No data sent to us. Everything runs locally on your computer.</p>
+    <div class="inst-grid">
+      <div class="inst-step reveal">
+        <div class="inst-num">1</div>
+        <span class="inst-ico">📦</span>
+        <div class="inst-h4">Download Extension</div>
+        <div class="inst-p">Download the Trinetra ZIP file from the button below.</div>
+      </div>
+      <div class="inst-step reveal" style="transition-delay:.08s">
+        <div class="inst-num">2</div>
+        <span class="inst-ico">📂</span>
+        <div class="inst-h4">Extract the ZIP</div>
+        <div class="inst-p">Unzip to any folder on your computer.</div>
+      </div>
+      <div class="inst-step reveal" style="transition-delay:.16s">
+        <div class="inst-num">3</div>
+        <span class="inst-ico">🔧</span>
+        <div class="inst-h4">Load in Chrome</div>
+        <div class="inst-p">chrome://extensions → Developer Mode ON → Load unpacked → Select folder.</div>
+      </div>
+      <div class="inst-step reveal" style="transition-delay:.24s">
+        <div class="inst-num">4</div>
+        <span class="inst-ico">🚀</span>
+        <div class="inst-h4">Start Backend</div>
+        <div class="inst-p">Open CMD in the folder. Run <code style="color:var(--p2);font-family:var(--fm)">python app.py</code>. Done!</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:48px">
+      <a href="#" class="btn-install" style="font-size:17px;padding:18px 40px;display:inline-flex;gap:12px">
+        <span style="font-size:22px">📦</span> Download Trinetra — Free
+      </a>
+      <div style="margin-top:14px;font-size:12px;color:var(--t3);font-family:var(--fm)">
+        Free forever · Chrome &amp; Edge · 100% local · No account
+      </div>
+      <div style="margin-top:32px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap">
+        <div style="background:var(--bg);border:1px solid var(--b1);border-radius:12px;padding:16px 22px;text-align:left;min-width:190px">
+          <div style="font-size:10px;color:var(--t3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Requirements</div>
+          <div style="font-size:13px;color:var(--t2);line-height:1.85">
+            ✓ Chrome or Edge browser<br/>✓ Python 3.9+<br/>✓ ~2GB disk space<br/>✓ Windows / Mac / Linux
+          </div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--b1);border-radius:12px;padding:16px 22px;text-align:left;min-width:190px">
+          <div style="font-size:10px;color:var(--t3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Privacy</div>
+          <div style="font-size:13px;color:var(--t2);line-height:1.85">
+            ✓ No data sent anywhere<br/>✓ AI runs on your machine<br/>✓ Evidence stored locally<br/>✓ No account required
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec" id="faq">
+  <div class="sec-inner">
+    <div class="sec-tag">Questions</div>
+    <h2 class="sec-h2">Frequently asked<br/><em>questions.</em></h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q">Is Trinetra really free?<span class="faq-arr">+</span></button>
+        <div class="faq-a">Yes — completely free, forever. No subscription, no freemium, no hidden charges. The extension is open source. You only need Python and a computer to run the AI model locally.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Is my data safe? Does it get sent anywhere?<span class="faq-arr">+</span></button>
+        <div class="faq-a">Your data never leaves your computer. The AI model runs entirely locally. The T&C text, analysis results, and blockchain evidence are all stored in a folder on your own hard drive. No cloud, no servers, no third parties ever see your data.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What is the blockchain evidence feature?<span class="faq-arr">+</span></button>
+        <div class="faq-a">Every time a T&C is analyzed, Trinetra creates a SHA-256 hash of the entire page text and stores it locally. If the company silently changes their terms later, you can verify the hash no longer matches — proving exactly what the document said when you agreed. This is cryptographic proof usable in consumer court disputes.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Does it work on all websites?<span class="faq-arr">+</span></button>
+        <div class="faq-a">Yes. Trinetra auto-detects any page containing Terms &amp; Conditions or Privacy Policy content by scanning the URL, page title, and body text. It works on Flipkart, Amazon, Spotify, Google, Netflix, banking apps, SaaS tools, and any website with legal terms.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Is the legal information accurate?<span class="faq-arr">+</span></button>
+        <div class="faq-a">Trinetra's legal references are based on actual Indian laws with exact section citations. However, Trinetra is an informational tool — not a substitute for professional legal advice. For serious disputes, always consult a qualified lawyer.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Why does it need Python? Can't it just run in the browser?<span class="faq-arr">+</span></button>
+        <div class="faq-a">The AI model (BART-large-mnli, ~1.6GB) is too large to run inside a browser extension. Running it locally means your data stays private and the analysis is far more accurate than any small browser-based model. The Python backend runs at localhost:5000 and the extension talks to it.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-sec">
+  <div style="position:relative;z-index:1">
+    <h2 class="cta-h2">The next T&amp;C you sign<br/><em>will be the last one</em><br/>you agree to blindly.</h2>
+    <p class="cta-sub">Join users who use Trinetra to understand what they're agreeing to — before it's too late.</p>
+    <a href="#install" class="btn-install" style="font-size:16px;padding:17px 36px;display:inline-flex;gap:11px">
+      <span style="font-size:21px">🧩</span> Install Trinetra Free
+    </a>
+    <div class="cta-note">
+      <span>✓ Free forever</span> &nbsp;·&nbsp; <span>✓ No account</span> &nbsp;·&nbsp;
+      <span>✓ 100% local</span> &nbsp;·&nbsp; <span>✓ Open source</span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="ft-left">
+    <div class="nav-eye" style="width:30px;height:30px;font-size:15px">👁️</div>
+    <div><div class="ft-name">Trinetra.net</div><div class="ft-tag">Legal intelligence for everyone</div></div>
+  </div>
+  <ul class="ft-links">
+    <li><a href="#">GitHub</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#laws">Laws</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#">Privacy Policy</a></li>
+  </ul>
+  <div class="ft-copy">© 2025 Trinetra.net · Built in India 🇮🇳</div>
+</footer>
+
+<script>
+  // FAQ accordion
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.parentElement;
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+
+  // Scroll reveal
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+  // Nav shrink on scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.style.padding = window.scrollY > 50 ? '12px 48px' : '18px 48px';
+  });
+</script>
+</body>
+</html>
