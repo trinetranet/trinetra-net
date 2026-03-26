@@ -1,22 +1,31 @@
 {
   "manifest_version": 3,
   "name": "Trinetra.net",
-  "version": "5.0.0",
-  "description": "Auto-analyzes Terms & Conditions with RBI, GDPR, DPDP Act citations. No clicking needed.",
-  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "version": "7.1.0",
+  "description": "AI reads Terms & Conditions for you. Flags dangerous clauses, cites Indian law, saves tamper-proof evidence to your PC.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs",
+    "downloads"
+  ],
   "host_permissions": [
-    "http://localhost:5000/*",
-    "https://localhost:5000/*",
+    "https://trinetra-net-production.up.railway.app/*",
     "<all_urls>"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Trinetra.net — Legal Intelligence"
+    "default_title": "Trinetra.net \u2014 Legal Intelligence"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
