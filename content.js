@@ -1383,25 +1383,16 @@
         ].join(" "),
       };
 
-      // ── Step 3: Save as JSON file to user's Downloads/Trinetra_Evidence/ ──
-      // Filename: domain/YYYY-MM-DD_BLOCKID.json
-      // This uses Chrome's downloads API via a blob URL
-
-      const fileName   = `Trinetra_Evidence/${domain}/${dateStr}_${blockId}.json`;
+      // ── Step 3: Save evidence file to user's PC ─────────────────────────
+      // File path: Downloads/Trinetra_Evidence/domain/YYYY-MM-DD_HH-MM_BLOCKID.json
+      const timeTag    = now.toTimeString().slice(0,8).replace(/:/g,"-"); // 14-30-45
+      const fileName   = `Trinetra_Evidence/${domain}/${dateStr}_${timeTag}_${blockId}.json`;
       const jsonStr    = JSON.stringify(evidenceBlock, null, 2);
-      const blob       = new Blob([jsonStr], { type: "application/json" });
-      const blobUrl    = URL.createObjectURL(blob);
 
-      // Trigger download via Chrome scripting
-      await chrome.runtime.sendMessage({
-        type:     "DOWNLOAD_EVIDENCE",
-        url:      blobUrl,
-        filename: fileName,
-      });
+      // Save the main evidence file
+      await saveFileToPC(fileName, jsonStr);
 
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-
-      // ── Step 4: Also save/update the master index file ────────────────────
+      // ── Step 4: Save master index entry ───────────────────────────────────
       await saveIndexFile(domain, dateStr, blockId, hashData, fileName);
 
       // ── Step 5: Update sidebar UI ─────────────────────────────────────────
@@ -1429,35 +1420,73 @@
     }
   }
 
-  // ── Save/update the master index file ─────────────────────────────────────
+  // ── Core file save — works even if background service worker is asleep ───────
+  async function saveFileToPC(filename, content) {
+    const blob    = new Blob([content], { type: "application/json" });
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Method 1: Try background service worker (cleanest, supports subfolders)
+    try {
+      const response = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("timeout")), 3000);
+        chrome.runtime.sendMessage(
+          { type: "DOWNLOAD_EVIDENCE", url: blobUrl, filename },
+          (resp) => {
+            clearTimeout(timeout);
+            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+            else resolve(resp);
+          }
+        );
+      });
+      if (response?.ok) {
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+        console.log("✅ Saved via background:", filename);
+        return true;
+      }
+    } catch(e) {
+      console.warn("Background save failed, using direct download:", e.message);
+    }
+
+    // Method 2: Direct <a> download fallback (no subfolder, but always works)
+    try {
+      const link    = document.createElement("a");
+      link.href     = blobUrl;
+      // Flatten path for direct download — replace / with _
+      link.download = filename.replace(/\//g, "_");
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+      console.log("✅ Saved via direct download:", link.download);
+      return true;
+    } catch(e2) {
+      console.error("Both save methods failed:", e2);
+      URL.revokeObjectURL(blobUrl);
+      return false;
+    }
+  }
+
+  // ── Save master index entry ────────────────────────────────────────────────
   async function saveIndexFile(domain, dateStr, blockId, hashData, evidenceFile) {
     const indexEntry = {
-      block_id:       blockId,
-      domain:         domain,
-      url:            location.href,
-      date:           dateStr,
-      overall_risk:   analysisData.overall_risk,
-      risk_score:     analysisData.risk_score,
-      total_clauses:  analysisData.total,
-      risky_clauses:  analysisData.risky_count,
-      safe_clauses:   analysisData.safe_count,
-      sha256_hash:    hashData.sha256_hash,
-      raw_text_hash:  hashData.raw_text_hash,
-      evidence_file:  evidenceFile,
-      stored_at:      new Date().toISOString(),
+      block_id:      blockId,
+      domain:        domain,
+      url:           location.href,
+      date:          dateStr,
+      overall_risk:  analysisData.overall_risk,
+      risk_score:    analysisData.risk_score,
+      total_clauses: analysisData.total,
+      risky_clauses: analysisData.risky_count,
+      safe_clauses:  analysisData.safe_count,
+      sha256_hash:   hashData.sha256_hash,
+      raw_text_hash: hashData.raw_text_hash,
+      evidence_file: evidenceFile,
+      stored_at:     new Date().toISOString(),
     };
-
-    const indexJson  = JSON.stringify({ entry: indexEntry, note: "Trinetra.net Evidence Index Entry" }, null, 2);
-    const blob       = new Blob([indexJson], { type: "application/json" });
-    const blobUrl    = URL.createObjectURL(blob);
-
-    await chrome.runtime.sendMessage({
-      type:     "DOWNLOAD_EVIDENCE",
-      url:      blobUrl,
-      filename: `Trinetra_Evidence/index_${blockId}.json`,
-    });
-
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    const indexJson = JSON.stringify(indexEntry, null, 2);
+    // Index file named by domain so all entries for same domain stay together
+    await saveFileToPC(`Trinetra_Evidence/_index_${domain}.json`, indexJson);
   }
 
   // ── Render the compact chain record in the sidebar ─────────────────────────
