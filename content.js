@@ -246,6 +246,11 @@
       background: #031410; border: 1px solid rgba(0,219,160,0.25);
       border-left: 4px solid #00dba0;
     }
+    /* NEUTRAL — light blue tinted card */
+    .tri-card.blue {
+      background: #050d18; border: 1px solid rgba(0,180,255,0.22);
+      border-left: 4px solid #00b4ff;
+    }
 
     .tri-icon {
       width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
@@ -254,11 +259,13 @@
     .tri-icon.red   { background: rgba(255,59,92,0.15); }
     .tri-icon.amber { background: rgba(255,179,71,0.15); }
     .tri-icon.green { background: rgba(0,219,160,0.15); }
+    .tri-icon.blue  { background: rgba(0,180,255,0.15); }
 
     .tri-label { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
     .tri-label.red   { color: #ff3b5c; }
     .tri-label.amber { color: #ffb347; }
     .tri-label.green { color: #00dba0; }
+    .tri-label.blue  { color: #00b4ff; }
 
     /* ── FOOTER ── */
     .tri-footer {
@@ -368,6 +375,9 @@
     .tri-hl.green { background: rgba(0,219,160,0.1); border-bottom-color: #00dba0; }
     .tri-hl.green:hover { background: rgba(0,219,160,0.25); box-shadow: 0 0 0 2px rgba(0,219,160,0.2); }
     .tri-hl.green:hover::after { background: #00dba0; color: #000; }
+    .tri-hl.blue  { background: rgba(0,180,255,0.08); border-bottom: 2px solid #00b4ff; border-radius: 3px; }
+    .tri-hl.blue:hover { background: rgba(0,180,255,0.22); box-shadow: 0 0 0 2px rgba(0,180,255,0.18); }
+    .tri-hl.blue:hover::after { background: #00b4ff; color: #000; content: "👆 Click — see analysis"; }
 
     /* ── BLOCKCHAIN PANEL (minimal, inside clauses scroll area) ── */
     .tri-chain-panel {
@@ -844,7 +854,10 @@
     const sum    = clause.summary || {};
     const refs   = (clause.legal?.references || []).slice(0, 2);
 
-    const hex = color === "red" ? "#ff3b5c" : color === "amber" ? "#ffb347" : "#00dba0";
+    const hex = color === "red"   ? "#ff3b5c"
+                : color === "amber" ? "#ffb347"
+                : color === "blue"  ? "#00b4ff"
+                : "#00dba0";  // green
     const posLabel = pos >= 70 ? "⚠️ Bottom" : pos >= 40 ? "📍 Middle" : "📍 Top";
 
     // ① What this clause says — show immediately, no click needed
@@ -903,7 +916,7 @@
       <!-- TAP BAR — full width, obvious ──────────────── -->
       <div id="ttoggle-${idx}" style="display:flex;align-items:center;justify-content:space-between;
         padding:8px 13px;cursor:pointer;user-select:none;
-        background:${color==="red"?"rgba(255,59,92,0.07)":color==="amber"?"rgba(255,179,71,0.07)":"rgba(0,219,160,0.06)"};
+        background:${color==="red"?"rgba(255,59,92,0.07)":color==="amber"?"rgba(255,179,71,0.07)":color==="blue"?"rgba(0,180,255,0.06)":"rgba(0,219,160,0.06)"};
         border-top:1px solid ${hex}33;transition:background 0.2s">
         <span style="font-size:10px;color:${hex};font-family:'Consolas',monospace;font-weight:700;letter-spacing:0.04em">
           🔍 Why it matters · Your rights · What to do
@@ -1162,7 +1175,7 @@
 
     data.clauses.forEach((clause, idx) => {
       const label = clause.labels[0] || "neutral";
-      if (label === "neutral") return;
+      // neutral clauses get light blue underline — don't skip them
       const color   = getColor(label);
       const snippet = clause.text.substring(0, 50);
 
@@ -1198,7 +1211,7 @@
                 let flashes = 0;
                 const flash = setInterval(() => {
                   card.style.outline = flashes % 2 === 0
-                    ? `2px solid ${color === "red" ? "#ff3b5c" : color === "amber" ? "#ffb347" : "#00dba0"}`
+                    ? `2px solid ${color === "red" ? "#ff3b5c" : color === "amber" ? "#ffb347" : color === "blue" ? "#00b4ff" : "#00dba0"}`
                     : "none";
                   flashes++;
                   if (flashes >= 6) {
@@ -1727,8 +1740,12 @@
 
   function getColor(label) {
     const red   = ["termination clause","privacy breach","theft","arbitration","indemnification","risky"];
-    const green = ["consumer-friendly","refund clause","neutral"];
-    return red.includes(label) ? "red" : green.includes(label) ? "green" : "amber";
+    const green = ["consumer-friendly","refund clause"];
+    const blue  = ["neutral"];
+    if (red.includes(label))   return "red";
+    if (green.includes(label)) return "green";
+    if (blue.includes(label))  return "blue";
+    return "amber";  // auto-renewal and anything unrecognised
   }
 
   function getIcon(label) {
