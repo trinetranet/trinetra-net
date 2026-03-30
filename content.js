@@ -246,11 +246,13 @@
       background: #031410; border: 1px solid rgba(0,219,160,0.25);
       border-left: 4px solid #00dba0;
     }
-    /* NEUTRAL — light blue tinted card */
+    .tri-card.green:hover { box-shadow: 0 4px 20px rgba(0,219,160,0.12); }
+    /* NEUTRAL — light blue / sky blue card */
     .tri-card.blue {
-      background: #050d18; border: 1px solid rgba(0,180,255,0.22);
+      background: #050d18; border: 1px solid rgba(0,180,255,0.25);
       border-left: 4px solid #00b4ff;
     }
+    .tri-card.blue:hover  { box-shadow: 0 4px 20px rgba(0,180,255,0.14); }
 
     .tri-icon {
       width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
@@ -375,9 +377,29 @@
     .tri-hl.green { background: rgba(0,219,160,0.1); border-bottom-color: #00dba0; }
     .tri-hl.green:hover { background: rgba(0,219,160,0.25); box-shadow: 0 0 0 2px rgba(0,219,160,0.2); }
     .tri-hl.green:hover::after { background: #00dba0; color: #000; }
-    .tri-hl.blue  { background: rgba(0,180,255,0.08); border-bottom: 2px solid #00b4ff; border-radius: 3px; }
-    .tri-hl.blue:hover { background: rgba(0,180,255,0.22); box-shadow: 0 0 0 2px rgba(0,180,255,0.18); }
-    .tri-hl.blue:hover::after { background: #00b4ff; color: #000; content: "👆 Click — see analysis"; }
+    .tri-hl.blue  {
+      background: rgba(0,180,255,0.08);
+      border-bottom: 2px solid #00b4ff;
+      border-radius: 3px; cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .tri-hl.blue:hover {
+      background: rgba(0,180,255,0.22);
+      box-shadow: 0 0 0 2px rgba(0,180,255,0.18);
+    }
+    .tri-hl.blue:hover::after {
+      content: "💡 Neutral clause — click to see analysis";
+      position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
+      background: #00b4ff; color: #000;
+      font-size: 10px; font-weight: 700; white-space: nowrap;
+      padding: 3px 9px; border-radius: 6px; pointer-events: none;
+      z-index: 2147483640; font-family: "Segoe UI", sans-serif;
+    }
+    /* Consumer-friendly green highlight */
+    .tri-hl.green:hover::after {
+      content: "✅ Consumer-friendly — click to see analysis";
+      background: #00dba0; color: #000;
+    }
 
     /* ── BLOCKCHAIN PANEL (minimal, inside clauses scroll area) ── */
     .tri-chain-panel {
@@ -1170,71 +1192,80 @@
 
   // ── Highlight risky text on page ───────────────────────────────────────────
   function highlightPage(data) {
-    // Map clause index → highlight span, and span → clause index
-    // This enables two-way linking between page highlights and sidebar cards
+    // Two-way linking: page highlight ↔ sidebar card
+    // ALL clause types highlighted: red/amber/green/blue(neutral)
+    // Smarter matching: tries multiple snippet lengths for better coverage
 
     data.clauses.forEach((clause, idx) => {
       const label = clause.labels[0] || "neutral";
-      // neutral clauses get light blue underline — don't skip them
-      const color   = getColor(label);
-      const snippet = clause.text.substring(0, 50);
+      const color = getColor(label);  // red / amber / green / blue
+
+      // Try multiple snippet lengths — shorter = easier to find on page
+      const snippets = [
+        clause.text.substring(0, 40).trim(),
+        clause.text.substring(0, 25).trim(),
+        clause.text.substring(5, 35).trim(),   // skip first few chars in case of bullet/number
+      ].filter(s => s.length >= 15);
 
       try {
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         let node;
-        while ((node = walker.nextNode())) {
-          if (node.parentElement?.closest("#trinetra-root")) continue;
-          if (node.textContent.includes(snippet.substring(0, 30))) {
-            const span = document.createElement("mark");
-            span.className    = `tri-hl ${color}`;
-            span.title        = `Trinetra: ${label} — click to see analysis`;
-            span.textContent  = node.textContent;
-            span.dataset.clauseIdx = idx;   // ← store clause index on the span
-            span.id           = `tri-hl-${idx}`;
+        let matched = false;
 
-            // CLICK: highlight → open sidebar and jump to clause card
+        while ((node = walker.nextNode()) && !matched) {
+          if (node.parentElement?.closest("#trinetra-root")) continue;
+          if (node.parentElement?.tagName === "SCRIPT") continue;
+          if (node.parentElement?.tagName === "STYLE") continue;
+
+          const nodeText = node.textContent;
+          const found    = snippets.some(s => nodeText.includes(s));
+
+          if (found) {
+            const span = document.createElement("mark");
+            span.className         = `tri-hl ${color}`;
+            span.id                = `tri-hl-${idx}`;
+            span.dataset.clauseIdx = String(idx);
+            span.title             = `Trinetra: ${label.toUpperCase()} — click to see full analysis`;
+            span.textContent       = nodeText;
+
+            // CLICK highlight on page → jump to clause card in sidebar
             span.addEventListener("click", (e) => {
               e.stopPropagation();
-
-              // 1. Open sidebar
               setSidebar(true);
 
-              // 2. Wait a tick then scroll to the card and flash it
               setTimeout(() => {
                 const card = document.getElementById(`tricard-${idx}`);
                 if (!card) return;
 
-                // Scroll card into view inside the sidebar
+                // Scroll sidebar to this card
                 card.scrollIntoView({ behavior: "smooth", block: "center" });
 
-                // Flash the card 3 times so user knows which one
-                let flashes = 0;
-                const flash = setInterval(() => {
-                  card.style.outline = flashes % 2 === 0
-                    ? `2px solid ${color === "red" ? "#ff3b5c" : color === "amber" ? "#ffb347" : color === "blue" ? "#00b4ff" : "#00dba0"}`
-                    : "none";
-                  flashes++;
-                  if (flashes >= 6) {
-                    clearInterval(flash);
-                    card.style.outline = "";
-                  }
+                // Flash card border 3 times
+                const flashCol = color === "red"   ? "#ff3b5c"
+                               : color === "amber" ? "#ffb347"
+                               : color === "blue"  ? "#00b4ff"
+                               : "#00dba0";
+                let f = 0;
+                const flashCard = setInterval(() => {
+                  card.style.outline = f % 2 === 0 ? `2px solid ${flashCol}` : "none";
+                  if (++f >= 6) { clearInterval(flashCard); card.style.outline = ""; }
                 }, 200);
 
-                // Also expand the card automatically
+                // Auto-expand card details
                 const body  = document.getElementById(`trix-${idx}`);
                 const arrow = document.getElementById(`tarrow-${idx}`);
                 if (body && body.style.display === "none") {
-                  body.style.display    = "block";
+                  body.style.display = "block";
                   if (arrow) arrow.style.transform = "rotate(180deg)";
                 }
               }, 350);
             });
 
             node.parentNode.replaceChild(span, node);
-            break;
+            matched = true;
           }
         }
-      } catch(e) {}
+      } catch(e) { console.warn("Trinetra highlight error:", e); }
     });
   }
 
