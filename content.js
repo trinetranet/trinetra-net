@@ -1356,6 +1356,55 @@
   }
 
   // ── Blockchain Hash & Ledger ──────────────────────────────────────────────
+  // ── Core file save — dual method, works even if background worker is asleep ──
+  async function saveFileToPC(filename, content) {
+    const blob    = new Blob([content], { type: "application/json" });
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Method 1: background service worker (supports subfolders on Windows)
+    try {
+      const response = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("timeout")), 4000);
+        chrome.runtime.sendMessage(
+          { type: "DOWNLOAD_EVIDENCE", url: blobUrl, filename },
+          (resp) => {
+            clearTimeout(timeout);
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              resolve(resp);
+            }
+          }
+        );
+      });
+      if (response && response.ok) {
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+        console.log("✅ Trinetra saved via background:", filename);
+        return true;
+      }
+    } catch(e) {
+      console.warn("⚠️ Background save failed, using direct download:", e.message);
+    }
+
+    // Method 2: direct <a> link fallback (always works, flattens path)
+    try {
+      const link      = document.createElement("a");
+      link.href       = blobUrl;
+      link.download   = filename.replace(/\//g, "_");
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+      console.log("✅ Trinetra saved via direct link:", link.download);
+      return true;
+    } catch(e2) {
+      console.error("❌ Both save methods failed:", e2);
+      URL.revokeObjectURL(blobUrl);
+      return false;
+    }
+  }
+
   // ── Hash & Store — saves evidence files directly to user's own PC ────────────
   // No database. No cloud. Files saved to Downloads/Trinetra_Evidence/domain/
   // Each file is a complete tamper-proof SHA-256 signed JSON block.
