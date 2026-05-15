@@ -104,6 +104,8 @@ trinetra-net/
 - **Indian Contract Act 1872 §23** — Unconscionable clause invalidation
 - **Arbitration Act 1996** — Arbitrator independence, consumer court preservation
 - **GDPR** — EU data protection (for companies serving EU users)
+- **Information Technology (Intermediary Guidelines) Rules 2021** — Platform accountability and user grievance mechanisms
+- **IT Rules 2021** — Platform accountability and grievance redressal requirements
 
 ---
 
